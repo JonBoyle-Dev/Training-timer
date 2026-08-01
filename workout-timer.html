@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<title>Workout Timer</title>
+<style>
+  :root{
+    --bg:#0a0a0a; --panel:#161616; --panel2:#1f1f1f; --line:#2b2b2b;
+    --txt:#f2f2f2; --dim:#9a9a9a; --accent:#ff7a1a; --accent2:#2f8bff;
+    --green:#7ed321; --red:#ff4d4d; --radius:16px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  body{max-width:520px; margin:0 auto; min-height:100vh; padding-bottom:90px;}
+  h1,h2,h3{margin:0}
+  button{font-family:inherit; cursor:pointer; border:none; color:var(--txt)}
+  .hidden{display:none !important}
+
+  /* Header */
+  header{position:sticky; top:0; z-index:20; background:linear-gradient(180deg,#0a0a0a 70%,rgba(10,10,10,0));
+    padding:16px 16px 10px; display:flex; align-items:center; gap:10px;}
+  header .title{font-size:22px; font-weight:800; letter-spacing:.5px}
+  header .title span{color:var(--accent)}
+  header .spacer{flex:1}
+  .icon-btn{background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    width:40px; height:40px; font-size:18px; display:flex; align-items:center; justify-content:center}
+
+  .wrap{padding:0 16px}
+
+  /* Cards */
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px; margin-bottom:12px; display:flex; align-items:center; gap:12px}
+  .card .swatch{width:6px; align-self:stretch; border-radius:6px; min-height:44px}
+  .card .grow{flex:1; min-width:0}
+  .card h3{font-size:17px; font-weight:700}
+  .card .sub{color:var(--dim); font-size:13px; margin-top:3px}
+  .card .chev{color:var(--dim); font-size:22px}
+
+  .section-label{color:var(--dim); font-size:12px; text-transform:uppercase; letter-spacing:1.5px;
+    margin:18px 2px 10px; font-weight:700}
+
+  /* Exercise row */
+  .ex{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:10px;
+    margin-bottom:10px; display:flex; align-items:center; gap:12px}
+  .ex .num{width:30px; height:30px; border-radius:9px; background:var(--panel2); color:var(--accent);
+    font-weight:800; display:flex; align-items:center; justify-content:center; font-size:15px; flex:0 0 auto}
+  .ex .thumb{width:48px; height:48px; border-radius:10px; background:var(--panel2); flex:0 0 auto;
+    object-fit:cover; display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--dim); overflow:hidden}
+  .ex .thumb img{width:100%; height:100%; object-fit:cover}
+  .ex .grow{flex:1; min-width:0}
+  .ex .name{font-weight:700; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .ex .meta{color:var(--dim); font-size:12.5px; margin-top:2px}
+  .ex .tag{display:inline-block; background:var(--panel2); border:1px solid var(--line); color:var(--dim);
+    font-size:11px; padding:2px 7px; border-radius:20px; margin-right:5px}
+  .ex .edit{background:transparent; color:var(--dim); font-size:18px; padding:6px}
+
+  /* Buttons */
+  .btn{display:block; width:100%; padding:15px; border-radius:14px; font-size:16px; font-weight:800;
+    text-align:center; letter-spacing:.5px}
+  .btn.primary{background:var(--accent); color:#111}
+  .btn.blue{background:var(--accent2); color:#fff}
+  .btn.ghost{background:var(--panel); border:1px solid var(--line); color:var(--txt); font-weight:700}
+  .btn.danger{background:transparent; border:1px solid var(--red); color:var(--red)}
+  .btn.sm{padding:11px; font-size:14px}
+  .btn-row{display:flex; gap:10px}
+  .btn-row .btn{margin:0}
+
+  /* Bottom bar for run */
+  .startbar{position:fixed; left:0; right:0; bottom:0; max-width:520px; margin:0 auto; padding:12px 16px;
+    background:linear-gradient(0deg,#0a0a0a 75%,rgba(10,10,10,0)); z-index:15}
+
+  /* Modal */
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:40; display:flex; align-items:flex-end;
+    justify-content:center}
+  .sheet{background:var(--panel); width:100%; max-width:520px; border-radius:20px 20px 0 0; padding:18px 16px 28px;
+    border-top:1px solid var(--line); max-height:92vh; overflow-y:auto}
+  .sheet h2{font-size:19px; margin-bottom:14px}
+  label.fld{display:block; margin-bottom:12px}
+  label.fld span{display:block; color:var(--dim); font-size:12.5px; margin-bottom:5px; font-weight:600}
+  input,select,textarea{width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--txt);
+    border-radius:11px; padding:12px; font-size:15px; font-family:inherit}
+  input:focus,select:focus{outline:none; border-color:var(--accent)}
+  .two{display:flex; gap:10px}
+  .two > *{flex:1}
+  .switch-row{display:flex; align-items:center; justify-content:space-between; background:var(--panel2);
+    border:1px solid var(--line); border-radius:11px; padding:12px; margin-bottom:12px}
+  .toggle{width:50px; height:28px; border-radius:20px; background:#3a3a3a; position:relative; transition:.2s; flex:0 0 auto}
+  .toggle.on{background:var(--accent)}
+  .toggle::after{content:""; position:absolute; width:22px; height:22px; border-radius:50%; background:#fff;
+    top:3px; left:3px; transition:.2s}
+  .toggle.on::after{left:25px}
+
+  /* Run screen */
+  #runScreen{position:fixed; inset:0; background:var(--bg); z-index:50; display:flex; flex-direction:column;
+    max-width:520px; margin:0 auto}
+  .run-top{padding:16px; display:flex; align-items:center; gap:10px}
+  .run-top .grow{flex:1}
+  .run-prog{height:5px; background:var(--panel2); border-radius:4px; overflow:hidden; margin:0 16px}
+  .run-prog > div{height:100%; background:var(--accent); width:0; transition:width .3s}
+  .run-body{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:16px}
+  .run-phase{font-size:13px; text-transform:uppercase; letter-spacing:2px; font-weight:800; color:var(--accent)}
+  .run-phase.rest{color:var(--accent2)}
+  .run-name{font-size:30px; font-weight:800; margin:10px 20px 4px; line-height:1.15}
+  .run-sub{color:var(--dim); font-size:15px; margin-bottom:8px}
+  .run-img{width:150px; height:150px; border-radius:20px; background:var(--panel); margin:12px 0;
+    display:flex; align-items:center; justify-content:center; font-size:60px; color:var(--dim); overflow:hidden}
+  .run-img img{width:100%; height:100%; object-fit:cover}
+  .run-time{font-size:78px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-2px; line-height:1}
+  .run-setinfo{font-size:20px; font-weight:700; margin:6px 0}
+  .run-reps{font-size:22px; font-weight:700; color:var(--accent)}
+  .run-ctrls{padding:14px 16px calc(20px + env(safe-area-inset-bottom)); display:flex; gap:10px; align-items:center}
+  .run-ctrls .big{flex:1; padding:18px; border-radius:16px; font-size:18px; font-weight:800}
+  .round-btn{width:58px; height:58px; border-radius:16px; background:var(--panel); border:1px solid var(--line);
+    font-size:22px; display:flex; align-items:center; justify-content:center; flex:0 0 auto}
+  .next-up{color:var(--dim); font-size:13px; margin-top:14px}
+  .next-up b{color:var(--txt)}
+
+  .poster-banner{width:100%; border-radius:14px; border:1px solid var(--line); margin-bottom:12px;
+    display:block; cursor:zoom-in}
+  .poster-view{position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:60; display:flex;
+    align-items:center; justify-content:center; padding:12px; cursor:zoom-out}
+  .poster-view img{max-width:100%; max-height:100%; border-radius:8px}
+  .empty{color:var(--dim); text-align:center; padding:40px 20px; font-size:15px}
+  .hint{color:var(--dim); font-size:12.5px; text-align:center; margin:14px 0}
+  ::-webkit-scrollbar{width:0}
+</style>
+</head>
+<body>
+
+<!-- ===== HOME ===== -->
+<div id="homeScreen">
+  <header>
+    <div class="title">GYM<span>TIMER</span></div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="btnBackup" title="Backup / Restore">⋯</button>
+  </header>
+  <div class="wrap">
+    <div class="section-label">Your Programs</div>
+    <div id="workoutList"></div>
+    <button class="btn ghost" id="btnAddWorkout" style="margin-top:4px">+ New Workout Day</button>
+    <div class="hint">Tap a day to see the exercises, then hit Start. Everything saves on this device automatically.</div>
+  </div>
+</div>
+
+<!-- ===== WORKOUT DETAIL ===== -->
+<div id="detailScreen" class="hidden">
+  <header>
+    <button class="icon-btn" id="btnDetailBack">‹</button>
+    <div class="title" id="detailTitle" style="font-size:19px"></div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="btnEditWorkout" title="Edit day">✎</button>
+  </header>
+  <div class="wrap">
+    <div id="detailPoster"></div>
+    <div id="detailMeta" class="hint" style="margin-top:0"></div>
+    <div id="exList"></div>
+    <button class="btn ghost" id="btnAddExercise" style="margin-top:2px">+ Add Exercise</button>
+  </div>
+  <div class="startbar">
+    <button class="btn primary" id="btnStart">▶ START WORKOUT</button>
+  </div>
+</div>
+
+<!-- ===== RUN SCREEN ===== -->
+<div id="runScreen" class="hidden">
+  <div class="run-top">
+    <button class="round-btn" id="btnRunExit">✕</button>
+    <div class="grow"></div>
+    <div id="runCounter" style="color:var(--dim); font-size:14px; font-weight:700"></div>
+  </div>
+  <div class="run-prog"><div id="runProgBar"></div></div>
+  <div class="run-body">
+    <div class="run-phase" id="runPhase">EXERCISE</div>
+    <div class="run-name" id="runName"></div>
+    <div class="run-sub" id="runSub"></div>
+    <div class="run-img" id="runImg">🏋️</div>
+    <div id="runTimeWrap">
+      <div class="run-time" id="runTime">00:00</div>
+    </div>
+    <div class="run-setinfo" id="runSetInfo"></div>
+    <div class="run-reps hidden" id="runReps"></div>
+    <div class="next-up" id="runNext"></div>
+  </div>
+  <div class="run-ctrls">
+    <button class="round-btn" id="btnPrev">⏮</button>
+    <button class="big btn primary" id="btnRunMain">START</button>
+    <button class="round-btn" id="btnNext">⏭</button>
+  </div>
+</div>
+
+<!-- ===== MODAL MOUNT ===== -->
+<div id="modalMount"></div>
+
+<script>
+/* ============================================================
+   Workout Timer — single file, vanilla JS, localStorage
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const el = (t,c)=>{const e=document.createElement(t); if(c)e.className=c; return e;};
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+/* ---------- Bell (Web Audio, no files) ---------- */
+let AC=null;
+function ac(){ if(!AC){ AC = new (window.AudioContext||window.webkitAudioContext)(); } if(AC.state==='suspended') AC.resume(); return AC; }
+function ding(freq=880, when=0, dur=0.9, vol=0.5){
+  const c=ac(); const t=c.currentTime+when;
+  const o=c.createOscillator(), g=c.createGain();
+  o.type='sine'; o.frequency.value=freq;
+  o.connect(g); g.connect(c.destination);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(vol,t+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.start(t); o.stop(t+dur+0.05);
+}
+function bell(times=1){ ac(); for(let i=0;i<times;i++){ ding(880,i*0.28,0.7,0.5); ding(1320,i*0.28,0.7,0.28);} }
+function tick(){ ding(1200,0,0.08,0.18); }
+function longBell(){ ding(660,0,1.4,0.5); ding(990,0,1.4,0.3); ding(1320,0.15,1.3,0.25); }
+
+/* ---------- Data ---------- */
+const COLORS={day1:'#2f8bff',day2:'#7ed321',day3:'#ff7a1a',boxing:'#ff4d4d',core:'#f5b301',custom:'#a86bff'};
+let DB = { workouts: [] };
+
+function save(){ localStorage.setItem('gymtimer.db', JSON.stringify(DB)); }
+function load(){
+  const raw = localStorage.getItem('gymtimer.db');
+  if(raw){ try{ DB=JSON.parse(raw); }catch(e){ DB={workouts:[]}; } }
+  if(!DB.workouts || !DB.workouts.length){ DB = seed(); save(); }
+}
+
+/* exercise: {id,name,muscle,sets,reps,rest,timed,work,img} */
+function ex(name,muscle,sets,reps,rest,timed,work,img){
+  return {id:uid(),name,muscle,sets,reps:reps||'',rest:rest,timed:!!timed,work:work||0,img:img||null};
+}
+function seed(){
+  return { workouts:[
+    { id:uid(), name:'Day 1 · Upper Body', color:COLORS.day1, note:'Chest · Back · Shoulders · Arms · rest 60–90s', poster:'day1',
+      exercises:[
+        ex('Barbell Bench Press','Chest, front shoulders & triceps',4,'6–8',90),
+        ex('Lat Pulldown','Lats & mid-back',4,'8–10',90),
+        ex('Seated Dumbbell Shoulder Press','Shoulders',3,'8–10',75),
+        ex('Seated Cable Row','Mid-back, posture',3,'10–12',75),
+        ex('Incline Dumbbell Press','Upper chest',3,'10–12',75),
+        ex('Dumbbell Lateral Raises','Side delts',3,'12–15',60),
+        ex('Rope Tricep Pushdown','Triceps',3,'12',60),
+        ex('EZ Bar Curl','Biceps',3,'12',60),
+      ]},
+    { id:uid(), name:'Day 2 · Lower Body', color:COLORS.day2, note:'Legs · Glutes · Calves · Core · rest 60–90s', poster:'day2',
+      exercises:[
+        ex('Leg Press','Quads, glutes & hamstrings',4,'8–10',90),
+        ex('Romanian Deadlift','Hamstrings, glutes & lower back',4,'8–10',90),
+        ex('Walking Lunges','Quads, glutes & balance',3,'12 each leg',75),
+        ex('Leg Curl','Hamstrings',3,'10–12',75),
+        ex('Leg Extension','Quads',3,'12',75),
+        ex('Standing Calf Raises','Calves',4,'15',60),
+        ex('Hanging Knee Raises','Lower abs',3,'15',60),
+        ex('Plank','Core stability',3,'',45,true,60),
+      ]},
+    { id:uid(), name:'Day 3 · Full Body', color:COLORS.day3, note:'Strength · Muscle · Fat loss · rest 60–90s', poster:'day3',
+      exercises:[
+        ex('Goblet Squat','Quads, glutes & core',3,'10',75),
+        ex('Incline Dumbbell Bench','Upper chest, shoulders & triceps',3,'10',75),
+        ex('Chest-Supported Row','Mid-back & biceps',3,'10',75),
+        ex('Dumbbell Romanian Deadlift','Hamstrings, glutes & lower back',3,'10',75),
+        ex('Cable Face Pull','Rear delts & upper back',3,'15',60),
+        ex('Dumbbell Shoulder Press','Shoulders & triceps',3,'10',75),
+        ex('Hammer Curl','Biceps & forearms',3,'12',60),
+        ex('Overhead Rope Extension','Triceps',3,'12',60),
+      ]},
+    { id:uid(), name:'Boxing Day', color:COLORS.boxing, note:'~90 min · rounds & conditioning', poster:'boxing',
+      exercises:[
+        ex('Jump Rope (warm up)','Warm up',1,'',30,true,180),
+        ex('Shadow Box (warm up)','Warm up',1,'',30,true,180),
+        ex('Dynamic Stretch','Mobility',1,'',20,true,240),
+        ex('Shadow Box Rounds','Combos, head movement, footwork',5,'',30,true,120),
+        ex('Reflex Bag','Timing, accuracy, speed',5,'',30,true,120),
+        ex('Battle Rope','Slams / waves / circles',5,'',30,true,90),
+        ex('Heavy / Wall Bag','Power shots, defense, combos',5,'',40,true,120),
+        ex('Combination Drills','2–3 combos per round',5,'',45,true,180),
+        ex('Footwork & Movement','In-out, lateral, angles',5,'',30,true,150),
+        ex('Strength Circuit','Pushups·rows·squats·press·plank',4,'circuit',60),
+        ex('Cool Down','Stretch & breathe',1,'',0,true,300),
+      ]},
+    { id:uid(), name:'Core Finisher', color:COLORS.core, note:'After boxing · 3–4 rounds · rest 30–45s', poster:'core',
+      exercises:[
+        ex('Plank','Core',4,'',45,true,60),
+        ex('Russian Twists','Obliques',4,'20 (10 each side)',40),
+        ex('Leg Raises','Lower abs',4,'15',40),
+        ex('Bicycle Crunches','Abs & obliques',4,'20 (10 each side)',40),
+        ex('Mountain Climbers','Core & cardio',4,'',40,true,40),
+        ex('Side Plank','Obliques',4,'each side',45,true,40),
+      ]},
+  ]};
+}
+
+/* ---------- Navigation ---------- */
+let curWorkoutId=null;
+function show(id){ ['homeScreen','detailScreen'].forEach(s=>$('#'+s).classList.add('hidden')); $('#'+id).classList.remove('hidden'); window.scrollTo(0,0);}
+function getWorkout(id){ return DB.workouts.find(w=>w.id===id); }
+
+/* ---------- Home render ---------- */
+function renderHome(){
+  const list=$('#workoutList'); list.innerHTML='';
+  if(!DB.workouts.length){ list.innerHTML='<div class="empty">No workouts yet. Add one below.</div>'; return; }
+  DB.workouts.forEach(w=>{
+    const c=el('div','card');
+    const sw=el('div','swatch'); sw.style.background=w.color||COLORS.custom;
+    const g=el('div','grow');
+    g.innerHTML=`<h3>${esc(w.name)}</h3><div class="sub">${w.exercises.length} exercises${w.note?' · '+esc(w.note):''}</div>`;
+    const ch=el('div','chev'); ch.textContent='›';
+    c.append(sw,g,ch);
+    c.onclick=()=>openDetail(w.id);
+    list.append(c);
+  });
+}
+
+/* ---------- Detail render ---------- */
+function openDetail(id){ curWorkoutId=id; renderDetail(); show('detailScreen'); }
+function renderDetail(){
+  const w=getWorkout(curWorkoutId); if(!w){ show('homeScreen'); return; }
+  $('#detailTitle').textContent=w.name;
+  $('#detailMeta').textContent=w.note||'';
+  renderPoster(w);
+  const list=$('#exList'); list.innerHTML='';
+  if(!w.exercises.length){ list.innerHTML='<div class="empty">No exercises. Add one below.</div>'; }
+  w.exercises.forEach((e,i)=>{
+    const row=el('div','ex');
+    const num=el('div','num'); num.textContent=i+1;
+    const thumb=el('div','thumb');
+    if(e.img){ const im=el('img'); im.src=e.img; thumb.append(im); } else thumb.textContent='🏋️';
+    const g=el('div','grow');
+    const metaBits=[];
+    metaBits.push(`<span class="tag">${e.sets} ${e.sets==1?'set':'sets'}</span>`);
+    if(e.timed) metaBits.push(`<span class="tag">${fmt(e.work)} work</span>`);
+    else if(e.reps) metaBits.push(`<span class="tag">${esc(e.reps)} reps</span>`);
+    if(e.rest>0) metaBits.push(`<span class="tag">${e.rest}s rest</span>`);
+    g.innerHTML=`<div class="name">${esc(e.name)}</div><div class="meta">${metaBits.join('')}</div>`;
+    const edit=el('button','edit'); edit.textContent='✎'; edit.onclick=(ev)=>{ev.stopPropagation(); openExerciseModal(e);};
+    row.append(num,thumb,g,edit);
+    list.append(row);
+  });
+}
+
+/* ---------- Poster banner ---------- */
+function renderPoster(w){
+  const box=$('#detailPoster'); box.innerHTML='';
+  if(!w.poster) return;
+  const img=el('img','poster-banner');
+  if(w.poster.startsWith && w.poster.startsWith('data:')){ img.src=w.poster; }
+  else {
+    // relative file: try .jpg, then .png, then .jpeg, then give up
+    const base=w.poster; const exts=['.jpg','.png','.jpeg','.webp']; let i=0;
+    img.src=base+exts[i];
+    img.onerror=()=>{ i++; if(i<exts.length){ img.src=base+exts[i]; } else { box.innerHTML=''; } };
+  }
+  img.onclick=()=>{ const v=el('div','poster-view'); const big=el('img'); big.src=img.src; v.append(big);
+    v.onclick=()=>v.remove(); document.body.append(v); };
+  box.append(img);
+}
+
+/* ---------- Helpers ---------- */
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmt(sec){ sec=Math.max(0,Math.round(sec)); const m=Math.floor(sec/60), s=sec%60; return m>0?`${m}:${String(s).padStart(2,'0')}`:`${s}s`; }
+function fmtClock(sec){ sec=Math.max(0,Math.round(sec)); const m=Math.floor(sec/60), s=sec%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+
+/* ---------- Modal system ---------- */
+function closeModal(){ $('#modalMount').innerHTML=''; }
+function modal(innerHtml){
+  const ov=el('div','overlay');
+  const sh=el('div','sheet');
+  sh.innerHTML=innerHtml;
+  ov.append(sh);
+  ov.onclick=e=>{ if(e.target===ov) closeModal(); };
+  $('#modalMount').innerHTML=''; $('#modalMount').append(ov);
+  return sh;
+}
+
+/* ---------- Exercise add/edit ---------- */
+function openExerciseModal(existing){
+  const e = existing || {id:null,name:'',muscle:'',sets:3,reps:'10',rest:60,timed:false,work:45,img:null};
+  const sh=modal(`
+    <h2>${existing?'Edit Exercise':'Add Exercise'}</h2>
+    <label class="fld"><span>Exercise name</span><input id="f_name" value="${esc(e.name)}" placeholder="e.g. Barbell Bench Press"></label>
+    <label class="fld"><span>Target muscle / note</span><input id="f_muscle" value="${esc(e.muscle)}" placeholder="e.g. Chest & triceps"></label>
+    <div class="switch-row">
+      <div><div style="font-weight:700">Timed exercise</div><div style="color:var(--dim);font-size:12px">On = counts down work time (plank, round). Off = rep-based.</div></div>
+      <div class="toggle ${e.timed?'on':''}" id="f_timed"></div>
+    </div>
+    <div class="two">
+      <label class="fld"><span>Sets / rounds</span><input id="f_sets" type="number" min="1" value="${e.sets}"></label>
+      <label class="fld" id="wrap_reps"><span>Reps</span><input id="f_reps" value="${esc(e.reps)}" placeholder="10 or 8–12"></label>
+      <label class="fld hidden" id="wrap_work"><span>Work (sec)</span><input id="f_work" type="number" min="1" value="${e.work||45}"></label>
+    </div>
+    <label class="fld"><span>Rest between sets (seconds)</span><input id="f_rest" type="number" min="0" value="${e.rest}"></label>
+    <label class="fld"><span>Photo (optional)</span><input id="f_img" type="file" accept="image/*"></label>
+    <div id="imgPrev">${e.img?`<img src="${e.img}" style="width:70px;height:70px;border-radius:10px;object-fit:cover;margin-bottom:10px">`:''}</div>
+    <button class="btn primary" id="f_save" style="margin-top:6px">${existing?'Save Changes':'Add Exercise'}</button>
+    ${existing?'<button class="btn danger sm" id="f_del" style="margin-top:10px">Delete Exercise</button>':''}
+    <button class="btn ghost sm" id="f_cancel" style="margin-top:10px">Cancel</button>
+  `);
+  let imgData=e.img;
+  const tog=sh.querySelector('#f_timed');
+  const syncTimed=()=>{ const on=tog.classList.contains('on');
+    sh.querySelector('#wrap_reps').classList.toggle('hidden',on);
+    sh.querySelector('#wrap_work').classList.toggle('hidden',!on); };
+  syncTimed();
+  tog.onclick=()=>{ tog.classList.toggle('on'); syncTimed(); };
+  sh.querySelector('#f_img').onchange=ev=>{
+    const file=ev.target.files[0]; if(!file) return;
+    const r=new FileReader(); r.onload=()=>{ imgData=downscale(r.result, ()=>{});
+      const img=new Image(); img.onload=()=>{ imgData=resizeImg(img,400); sh.querySelector('#imgPrev').innerHTML=`<img src="${imgData}" style="width:70px;height:70px;border-radius:10px;object-fit:cover;margin-bottom:10px">`; };
+      img.src=r.result; };
+    r.readAsDataURL(file);
+  };
+  sh.querySelector('#f_cancel').onclick=closeModal;
+  sh.querySelector('#f_save').onclick=()=>{
+    const w=getWorkout(curWorkoutId);
+    const on=tog.classList.contains('on');
+    const obj={
+      name:sh.querySelector('#f_name').value.trim()||'Exercise',
+      muscle:sh.querySelector('#f_muscle').value.trim(),
+      sets:clamp(parseInt(sh.querySelector('#f_sets').value)||1,1,50),
+      reps:on?'':sh.querySelector('#f_reps').value.trim(),
+      rest:clamp(parseInt(sh.querySelector('#f_rest').value)||0,0,900),
+      timed:on,
+      work:on?clamp(parseInt(sh.querySelector('#f_work').value)||30,1,3600):0,
+      img:imgData||null
+    };
+    if(existing){ Object.assign(e,obj); }
+    else { obj.id=uid(); w.exercises.push(obj); }
+    save(); renderDetail(); closeModal();
+  };
+  if(existing){ sh.querySelector('#f_del').onclick=()=>{
+    if(confirm('Delete "'+e.name+'"?')){ const w=getWorkout(curWorkoutId);
+      w.exercises=w.exercises.filter(x=>x.id!==e.id); save(); renderDetail(); closeModal(); }
+  };}
+}
+function resizeImg(img,max){
+  let{width:w,height:h}=img; if(w>h && w>max){ h=h*max/w; w=max; } else if(h>max){ w=w*max/h; h=max; }
+  const cv=el('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
+  return cv.toDataURL('image/jpeg',0.8);
+}
+function downscale(d){ return d; }
+
+/* ---------- Workout add/edit ---------- */
+function openWorkoutModal(existing){
+  const w=existing||{name:'',note:'',color:COLORS.custom,exercises:[]};
+  const colors=Object.values(COLORS);
+  const sh=modal(`
+    <h2>${existing?'Edit Workout Day':'New Workout Day'}</h2>
+    <label class="fld"><span>Name</span><input id="w_name" value="${esc(w.name)}" placeholder="e.g. Day 4 · Arms"></label>
+    <label class="fld"><span>Note (optional)</span><input id="w_note" value="${esc(w.note)}" placeholder="e.g. rest 60–90s"></label>
+    <label class="fld"><span>Colour</span></label>
+    <div id="w_colors" style="display:flex;gap:10px;margin-bottom:16px">
+      ${colors.map(c=>`<div data-c="${c}" style="width:34px;height:34px;border-radius:50%;background:${c};border:3px solid ${c===(w.color)?'#fff':'transparent'};cursor:pointer"></div>`).join('')}
+    </div>
+    <label class="fld"><span>Poster image (optional)</span><input id="w_poster" type="file" accept="image/*"></label>
+    <div id="w_posterPrev">${(existing&&existing.poster&&existing.poster.startsWith('data:'))?`<img src="${existing.poster}" style="width:100%;border-radius:10px;margin-bottom:10px">`:''}</div>
+    <button class="btn primary" id="w_save">${existing?'Save':'Create'}</button>
+    ${existing?'<button class="btn danger sm" id="w_del" style="margin-top:10px">Delete Day</button>':''}
+    <button class="btn ghost sm" id="w_cancel" style="margin-top:10px">Cancel</button>
+  `);
+  let color=w.color; let posterData = (existing&&existing.poster)?existing.poster:null;
+  sh.querySelectorAll('#w_colors > div').forEach(d=>d.onclick=()=>{
+    color=d.dataset.c; sh.querySelectorAll('#w_colors > div').forEach(x=>x.style.border='3px solid transparent'); d.style.border='3px solid #fff';
+  });
+  sh.querySelector('#w_poster').onchange=ev=>{
+    const file=ev.target.files[0]; if(!file) return;
+    const r=new FileReader(); r.onload=()=>{ const img=new Image(); img.onload=()=>{ posterData=resizeImg(img,900);
+      sh.querySelector('#w_posterPrev').innerHTML=`<img src="${posterData}" style="width:100%;border-radius:10px;margin-bottom:10px">`; }; img.src=r.result; };
+    r.readAsDataURL(file);
+  };
+  sh.querySelector('#w_cancel').onclick=closeModal;
+  sh.querySelector('#w_save').onclick=()=>{
+    const name=sh.querySelector('#w_name').value.trim()||'New Day';
+    const note=sh.querySelector('#w_note').value.trim();
+    if(existing){ existing.name=name; existing.note=note; existing.color=color; existing.poster=posterData; }
+    else { const nw={id:uid(),name,note,color,poster:posterData,exercises:[]}; DB.workouts.push(nw); curWorkoutId=nw.id; }
+    save();
+    if(existing){ renderDetail(); } renderHome();
+    closeModal();
+    if(!existing) openDetail(curWorkoutId);
+  };
+  if(existing){ sh.querySelector('#w_del').onclick=()=>{
+    if(confirm('Delete the whole "'+existing.name+'" day?')){ DB.workouts=DB.workouts.filter(x=>x.id!==existing.id); save(); renderHome(); closeModal(); show('homeScreen'); }
+  };}
+}
+
+/* ---------- Backup / restore ---------- */
+function openBackupModal(){
+  const sh=modal(`
+    <h2>Backup & Restore</h2>
+    <p style="color:var(--dim);font-size:13.5px;line-height:1.5;margin-top:0">
+      Your data lives in this browser only. Export a backup file to keep it safe or move it to another phone/PC.</p>
+    <button class="btn primary" id="b_exp">⬇ Export Backup (.json)</button>
+    <label class="fld" style="margin-top:14px"><span>Import a backup file</span><input id="b_imp" type="file" accept="application/json,.json"></label>
+    <button class="btn danger sm" id="b_reset" style="margin-top:6px">Reset to default programs</button>
+    <button class="btn ghost sm" id="b_cancel" style="margin-top:10px">Close</button>
+  `);
+  sh.querySelector('#b_exp').onclick=()=>{
+    const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+    const a=el('a'); a.href=URL.createObjectURL(blob); a.download='gymtimer-backup.json'; a.click();
+  };
+  sh.querySelector('#b_imp').onchange=ev=>{
+    const f=ev.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result);
+      if(d&&Array.isArray(d.workouts)){ DB=d; save(); renderHome(); closeModal(); alert('Backup restored ✔'); }
+      else alert('That file does not look like a valid backup.'); }catch(e){ alert('Could not read that file.'); } };
+    r.readAsText(f);
+  };
+  sh.querySelector('#b_reset').onclick=()=>{ if(confirm('Reset everything back to the 5 default programs? Your changes will be lost.')){ DB=seed(); save(); renderHome(); closeModal(); }};
+  sh.querySelector('#b_cancel').onclick=closeModal;
+}
+
+/* ============================================================
+   RUN ENGINE
+   Each set produces phases:
+     timed exercise -> [WORK(work s)] -> bell -> [REST(rest s)] -> bell
+     rep exercise   -> [DO REPS (manual)] -> [REST(rest s)] -> bell
+   No rest after the final set of the final... we still play a short
+   "done" and move on. Rest is skipped after the very last set.
+   ============================================================ */
+let RUN=null; // {workout, steps:[], idx, remaining, running, tId, wakeLock}
+function buildSteps(w){
+  const steps=[];
+  w.exercises.forEach((e,ei)=>{
+    for(let s=1;s<=e.sets;s++){
+      const lastSet = s===e.sets;
+      if(e.timed){
+        steps.push({type:'work', e, ei, set:s, dur:e.work});
+      } else {
+        steps.push({type:'reps', e, ei, set:s, dur:0});
+      }
+      // rest after set, except after the final set of the exercise
+      if(e.rest>0 && !lastSet){
+        steps.push({type:'rest', e, ei, set:s, dur:e.rest});
+      }
+    }
+    // short rest between exercises (use this exercise's rest) — optional, only if rest>0
+    if(e.rest>0 && ei < w.exercises.length-1){
+      steps.push({type:'rest', e, ei, set:e.sets, dur:e.rest, transition:true});
+    }
+  });
+  return steps;
+}
+function startRun(){
+  const w=getWorkout(curWorkoutId); if(!w||!w.exercises.length){ alert('Add an exercise first.'); return; }
+  ac(); // unlock audio on user gesture
+  RUN={ workout:w, steps:buildSteps(w), idx:0, remaining:0, running:false, tId:null };
+  $('#runScreen').classList.remove('hidden');
+  requestWake();
+  loadStep(0,false);
+}
+function exitRun(){
+  stopTimer(); releaseWake();
+  $('#runScreen').classList.add('hidden');
+  RUN=null;
+}
+function loadStep(i, autostart){
+  if(!RUN) return;
+  if(i>=RUN.steps.length){ finishRun(); return; }
+  if(i<0) i=0;
+  RUN.idx=i;
+  const st=RUN.steps[i];
+  RUN.remaining=st.dur;
+  // counter
+  const totalEx=RUN.workout.exercises.length;
+  $('#runCounter').textContent=`Exercise ${st.ei+1}/${totalEx}`;
+  // progress
+  $('#runProgBar').style.width = Math.round((i/RUN.steps.length)*100)+'%';
+  const phase=$('#runPhase'), name=$('#runName'), sub=$('#runSub'), img=$('#runImg'),
+        setInfo=$('#runSetInfo'), reps=$('#runReps'), timeEl=$('#runTime'), nextEl=$('#runNext');
+  // image
+  img.innerHTML = st.e.img?`<img src="${st.e.img}">`:'🏋️';
+  // next up
+  const nx=RUN.steps[i+1];
+  nextEl.innerHTML = nx?`Next: <b>${esc(nx.type==='rest'?'Rest':nx.e.name)}</b>${nx.type!=='rest'?` · set ${nx.set}`:''}` : 'Last one — finish strong!';
+
+  if(st.type==='rest'){
+    phase.textContent = st.transition? 'Rest · next exercise' : 'Rest';
+    phase.className='run-phase rest';
+    name.textContent = st.transition ? RUN.steps[i+1]?.e.name || 'Rest' : st.e.name;
+    sub.textContent = st.transition?'Get ready':'Recover';
+    setInfo.textContent='';
+    reps.classList.add('hidden');
+    timeEl.textContent=fmtClock(st.dur);
+    $('#btnRunMain').textContent = autostart?'PAUSE':'START REST';
+  } else if(st.type==='work'){
+    phase.textContent='Work'; phase.className='run-phase';
+    name.textContent=st.e.name; sub.textContent=st.e.muscle||'';
+    setInfo.textContent=`Set ${st.set} of ${st.e.sets}`;
+    reps.classList.add('hidden');
+    timeEl.textContent=fmtClock(st.dur);
+    $('#btnRunMain').textContent = autostart?'PAUSE':'START';
+  } else { // reps
+    phase.textContent='Do your reps'; phase.className='run-phase';
+    name.textContent=st.e.name; sub.textContent=st.e.muscle||'';
+    setInfo.textContent=`Set ${st.set} of ${st.e.sets}`;
+    reps.classList.remove('hidden');
+    reps.textContent = st.e.reps ? st.e.reps+' reps' : '';
+    timeEl.textContent='';
+    $('#btnRunMain').textContent='SET DONE ✓';
+  }
+  RUN.running=false; stopTimer();
+  if(autostart && st.type!=='reps'){ startTimer(); }
+}
+function mainBtn(){
+  if(!RUN) return;
+  const st=RUN.steps[RUN.idx];
+  if(st.type==='reps'){
+    // manual completion -> go next (which may be rest, auto-start it)
+    next(true);
+    return;
+  }
+  if(RUN.running){ stopTimer(); RUN.running=false; $('#btnRunMain').textContent = st.type==='rest'?'RESUME REST':'RESUME'; }
+  else { startTimer(); }
+}
+function startTimer(){
+  const st=RUN.steps[RUN.idx];
+  RUN.running=true;
+  $('#btnRunMain').textContent='PAUSE';
+  RUN.last=Date.now();
+  stopTimer();
+  RUN.tId=setInterval(()=>{
+    const now=Date.now(); const dt=(now-RUN.last)/1000; RUN.last=now;
+    RUN.remaining-=dt;
+    if(RUN.remaining<=3.999 && RUN.remaining>0){ const whole=Math.ceil(RUN.remaining); if(whole!==RUN._lastTick){ RUN._lastTick=whole; tick(); } }
+    if(RUN.remaining<=0){
+      $('#runTime').textContent=fmtClock(0);
+      stopTimer(); RUN.running=false;
+      // bell depends on phase
+      if(st.type==='work'){ bell(2); } else { longBell(); }
+      setTimeout(()=>next(true), 500);
+      return;
+    }
+    $('#runTime').textContent=fmtClock(RUN.remaining);
+  },100);
+}
+function stopTimer(){ if(RUN&&RUN.tId){ clearInterval(RUN.tId); RUN.tId=null; } if(RUN) RUN._lastTick=null; }
+function next(autostart){ if(!RUN) return; stopTimer(); loadStep(RUN.idx+1, !!autostart); }
+function prev(){ if(!RUN) return; stopTimer();
+  // go back to previous exercise's first step
+  let i=RUN.idx-1;
+  loadStep(Math.max(0,i), false);
+}
+function finishRun(){
+  stopTimer(); bell(3);
+  $('#runProgBar').style.width='100%';
+  $('#runPhase').textContent='Done'; $('#runPhase').className='run-phase';
+  $('#runName').textContent='Workout Complete 💪';
+  $('#runSub').textContent='One workout at a time.';
+  $('#runImg').innerHTML='🏆';
+  $('#runTime').textContent=''; $('#runSetInfo').textContent=''; $('#runReps').classList.add('hidden');
+  $('#runNext').textContent='';
+  $('#btnRunMain').textContent='FINISH';
+  $('#btnRunMain').onclick=exitRun;
+}
+
+/* ---------- Wake lock ---------- */
+let wakeLock=null;
+async function requestWake(){ try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } }catch(e){} }
+function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && RUN){ requestWake(); } });
+
+/* ---------- Wire up ---------- */
+$('#btnAddWorkout').onclick=()=>openWorkoutModal(null);
+$('#btnBackup').onclick=openBackupModal;
+$('#btnDetailBack').onclick=()=>{ renderHome(); show('homeScreen'); };
+$('#btnEditWorkout').onclick=()=>openWorkoutModal(getWorkout(curWorkoutId));
+$('#btnAddExercise').onclick=()=>openExerciseModal(null);
+$('#btnStart').onclick=startRun;
+$('#btnRunExit').onclick=()=>{ if(confirm('End this workout?')) exitRun(); };
+$('#btnRunMain').onclick=mainBtn;
+$('#btnNext').onclick=()=>next(false);
+$('#btnPrev').onclick=prev;
+
+/* ---------- Init ---------- */
+load();
+renderHome();
+</script>
+</body>
+</html>
