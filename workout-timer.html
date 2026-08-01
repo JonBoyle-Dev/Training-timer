@@ -224,6 +224,25 @@ function longBell(){ ding(660,0,1.4,0.5); ding(990,0,1.4,0.3); ding(1320,0.15,1.
 
 /* ---------- Data ---------- */
 const COLORS={day1:'#2f8bff',day2:'#7ed321',day3:'#ff7a1a',boxing:'#ff4d4d',core:'#f5b301',custom:'#a86bff'};
+
+/* Default exercise thumbnails cropped from the program posters (thumbs/ folder).
+   Matched by exercise name; a photo uploaded to an exercise overrides this. */
+const DEFAULT_IMAGES={
+  "Barbell Bench Press":"thumbs/day1-1.jpg","Lat Pulldown":"thumbs/day1-2.jpg",
+  "Seated Dumbbell Shoulder Press":"thumbs/day1-3.jpg","Seated Cable Row":"thumbs/day1-4.jpg",
+  "Incline Dumbbell Press":"thumbs/day1-5.jpg","Dumbbell Lateral Raises":"thumbs/day1-6.jpg",
+  "Rope Tricep Pushdown":"thumbs/day1-7.jpg","EZ Bar Curl":"thumbs/day1-8.jpg",
+  "Leg Press":"thumbs/day2-1.jpg","Romanian Deadlift":"thumbs/day2-2.jpg",
+  "Walking Lunges":"thumbs/day2-3.jpg","Leg Curl":"thumbs/day2-4.jpg",
+  "Leg Extension":"thumbs/day2-5.jpg","Standing Calf Raises":"thumbs/day2-6.jpg",
+  "Hanging Knee Raises":"thumbs/day2-7.jpg","Plank":"thumbs/day2-8.jpg",
+  "Goblet Squat":"thumbs/day3-1.jpg","Incline Dumbbell Bench":"thumbs/day3-2.jpg",
+  "Chest-Supported Row":"thumbs/day3-3.jpg","Dumbbell Romanian Deadlift":"thumbs/day3-4.jpg",
+  "Cable Face Pull":"thumbs/day3-5.jpg","Dumbbell Shoulder Press":"thumbs/day3-6.jpg",
+  "Hammer Curl":"thumbs/day3-7.jpg","Overhead Rope Extension":"thumbs/day3-8.jpg"
+};
+function imgFor(e){ return (e && e.img) ? e.img : (e && DEFAULT_IMAGES[e.name]) || null; }
+
 let DB = { workouts: [] };
 
 function save(){ localStorage.setItem('gymtimer.db', JSON.stringify(DB)); }
@@ -332,7 +351,8 @@ function renderDetail(){
     const row=el('div','ex');
     const num=el('div','num'); num.textContent=i+1;
     const thumb=el('div','thumb');
-    if(e.img){ const im=el('img'); im.src=e.img; thumb.append(im); } else thumb.textContent='🏋️';
+    const timg=imgFor(e);
+    if(timg){ const im=el('img'); im.src=timg; thumb.append(im); } else thumb.textContent='🏋️';
     const g=el('div','grow');
     const metaBits=[];
     metaBits.push(`<span class="tag">${e.sets} ${e.sets==1?'set':'sets'}</span>`);
@@ -576,7 +596,8 @@ function loadStep(i, autostart){
   const phase=$('#runPhase'), name=$('#runName'), sub=$('#runSub'), img=$('#runImg'),
         setInfo=$('#runSetInfo'), reps=$('#runReps'), timeEl=$('#runTime'), nextEl=$('#runNext');
   // image
-  img.innerHTML = st.e.img?`<img src="${st.e.img}">`:'🏋️';
+  const rimg=imgFor(st.e);
+  img.innerHTML = rimg?`<img src="${rimg}">`:'🏋️';
   // next up
   const nx=RUN.steps[i+1];
   nextEl.innerHTML = nx?`Next: <b>${esc(nx.type==='rest'?'Rest':nx.e.name)}</b>${nx.type!=='rest'?` · set ${nx.set}`:''}` : 'Last one — finish strong!';
